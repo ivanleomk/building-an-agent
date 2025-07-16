@@ -1,0 +1,17 @@
+{
+  "name": "building-an-agent",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.56.0",
+    "chalk": "^5.4.1",
+    "tree-cli": "^0.6.7",
+    "zod": "^4.0.5"
+  }
+}
