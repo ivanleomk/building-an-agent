@@ -1,40 +1,53 @@
 import React from 'react';
 import {Box, Text} from 'ink';
 import Anthropic from '@anthropic-ai/sdk';
-import BlinkingDot from './BlinkingDot.js';
 
 interface MessageProps {
 	message: Anthropic.MessageParam;
 }
 
 export default function Message({message}: MessageProps) {
-	if (message.role === 'user') {
+	const textColor = message.role === 'user' ? 'green' : 'yellow';
+	const prefix = message.role === 'user' ? '>' : '●';
+
+	// This is a simple user message ( or text response )
+	if (typeof message.content === 'string') {
 		return (
 			<Box marginLeft={2}>
-				<Text color="yellow">&gt; {message.content as string}</Text>
+				<Text color={textColor}>
+					{prefix} {message.content}
+				</Text>
 			</Box>
 		);
 	}
 
-	if (message.role === 'assistant' && message.content === '') {
-		return (
-			<Box marginLeft={2}>
-				<BlinkingDot color="green" />
-			</Box>
-		);
+	// We want to return null for a tool result
+	if (message.content[0]?.type == 'tool_result') {
+		return null;
 	}
 
-	if (typeof message.content === 'object') {
+	// We want to display a nice tool call message
+	if (message.content[0]?.type == 'tool_use') {
 		return (
-			<Box marginLeft={2}>
-				<Text color="green">● {JSON.stringify(message.content, null, 2)}</Text>
+			<Box
+				marginLeft={2}
+				width={50}
+				borderStyle="round"
+				borderColor="cyan"
+				padding={1}
+			>
+				<Text color="cyan" wrap="wrap">
+					Called {message.content[0].name}
+				</Text>
 			</Box>
 		);
 	}
 
 	return (
 		<Box marginLeft={2}>
-			<Text color="green">● {message.content}</Text>
+			<Text color={textColor}>
+				{prefix} {JSON.stringify(message.content, null, 2)}
+			</Text>
 		</Box>
 	);
 }
