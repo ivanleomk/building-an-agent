@@ -45,20 +45,12 @@ export type Message = {
 export type ConversationItem = Message | Tool;
 
 export type ProviderEvent =
-	| {type: 'start_message'; role: 'assistant' | 'user'}
-	| {
-			type: 'content_delta';
-			delta: string;
-			index: number;
-			input_type: 'text' | 'reasoning';
-	  }
-	| {type: 'update_metadata'; index: number; key: string; value: string}
-	| {type: 'tool_call_start'; index: number; id: string; name: string}
-	| {type: 'tool_call_delta'; index: number; argsDelta: string}
-	| {type: 'content_block_end'; index: number}
-	| {type: 'end_message'}
-	| {type: 'add_tool_result'; tool: Tool}
-	| {type: 'error'; message: string};
+	| {type: 'START_MESSAGE'; role: 'assistant' | 'user'}
+	| {type: 'ADD_CONTENT_BLOCK'; index: number; block: ContentBlock}
+	| {type: 'UPDATE_CONTENT_BLOCK'; index: number; delta?: string; final?: boolean}
+	| {type: 'UPDATE_CONTENT_BLOCK_METADATA'; index: number; key: string; value: any}
+	| {type: 'END_MESSAGE'}
+	| {type: 'ERROR'; message: string};
 
 export const TOOLS = [...FILE_TOOLS];
 

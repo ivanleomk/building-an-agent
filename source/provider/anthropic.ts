@@ -52,7 +52,7 @@ export class AnthropicProvider implements Provider {
 		});
 
 		const startEvent = {
-			type: 'start_message' as const,
+			type: 'START_MESSAGE' as const,
 			role: 'assistant' as const,
 		};
 		appendFileSync('anthropic_events.jsonl', JSON.stringify(startEvent) + '\n');
@@ -65,7 +65,7 @@ export class AnthropicProvider implements Provider {
 			}
 		}
 
-		const endEvent = {type: 'end_message' as const};
+		const endEvent = {type: 'END_MESSAGE' as const};
 		appendFileSync('anthropic_events.jsonl', JSON.stringify(endEvent) + '\n');
 		yield endEvent;
 	}
@@ -77,24 +77,26 @@ export class AnthropicProvider implements Provider {
 			case 'content_block_start':
 				if (chunk.content_block.type === 'text') {
 					yield {
-						type: 'content_delta',
+						type: 'ADD_CONTENT_BLOCK',
 						index: chunk.index,
-						input_type: 'text',
-						delta: '',
+						block: {type: 'text', text: ''},
 					};
 				} else if (chunk.content_block.type === 'tool_use') {
 					yield {
-						type: 'tool_call_start',
+						type: 'ADD_CONTENT_BLOCK',
 						index: chunk.index,
-						id: chunk.content_block.id,
-						name: chunk.content_block.name,
+						block: {
+							type: 'tool_call',
+							tool_id: chunk.content_block.id,
+							name: chunk.content_block.name,
+							args: '',
+						},
 					};
 				} else if (chunk.content_block.type === 'thinking') {
 					yield {
-						type: 'content_delta',
+						type: 'ADD_CONTENT_BLOCK',
 						index: chunk.index,
-						input_type: 'reasoning',
-						delta: '',
+						block: {type: 'reasoning', text: ''},
 					};
 				}
 				break;
@@ -102,27 +104,25 @@ export class AnthropicProvider implements Provider {
 			case 'content_block_delta':
 				if (chunk.delta.type === 'text_delta') {
 					yield {
-						type: 'content_delta',
+						type: 'UPDATE_CONTENT_BLOCK',
 						index: chunk.index,
-						input_type: 'text',
 						delta: chunk.delta.text,
 					};
 				} else if (chunk.delta.type === 'input_json_delta') {
 					yield {
-						type: 'tool_call_delta',
+						type: 'UPDATE_CONTENT_BLOCK',
 						index: chunk.index,
-						argsDelta: chunk.delta.partial_json,
+						delta: chunk.delta.partial_json,
 					};
 				} else if (chunk.delta.type === 'thinking_delta') {
 					yield {
-						type: 'content_delta',
+						type: 'UPDATE_CONTENT_BLOCK',
 						index: chunk.index,
-						input_type: 'reasoning',
 						delta: chunk.delta.thinking,
 					};
 				} else if (chunk.delta.type === 'signature_delta') {
 					yield {
-						type: 'update_metadata',
+						type: 'UPDATE_CONTENT_BLOCK_METADATA',
 						index: chunk.index,
 						key: 'signature',
 						value: chunk.delta.signature,
@@ -132,8 +132,9 @@ export class AnthropicProvider implements Provider {
 
 			case 'content_block_stop':
 				yield {
-					type: 'content_block_end',
+					type: 'UPDATE_CONTENT_BLOCK',
 					index: chunk.index,
+					final: true,
 				};
 				break;
 		}

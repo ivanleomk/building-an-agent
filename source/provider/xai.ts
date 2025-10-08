@@ -49,13 +49,13 @@ export class XAIProvider implements Provider {
 			...(tools && {tools: tools.map(this.toOpenAITool)}),
 		});
 
-		yield {type: 'start_message', role: 'assistant'};
+		yield {type: 'START_MESSAGE', role: 'assistant'};
 
 		for await (const chunk of stream) {
 			yield* this.handleStreamChunk(chunk);
 		}
 
-		yield {type: 'end_message'};
+		yield {type: 'END_MESSAGE'};
 	}
 
 	private *handleStreamChunk(
@@ -76,12 +76,22 @@ export class XAIProvider implements Provider {
 				this.priorContentBlockType != undefined
 			) {
 				this.currentContentBlockIndex++;
+				yield {
+					type: 'ADD_CONTENT_BLOCK',
+					index: this.currentContentBlockIndex,
+					block: {type: 'text', text: ''},
+				};
+			} else if (this.priorContentBlockType === undefined) {
+				yield {
+					type: 'ADD_CONTENT_BLOCK',
+					index: this.currentContentBlockIndex,
+					block: {type: 'text', text: ''},
+				};
 			}
 			this.priorContentBlockType = 'text';
 			yield {
-				type: 'content_delta',
+				type: 'UPDATE_CONTENT_BLOCK',
 				index: this.currentContentBlockIndex,
-				input_type: 'text',
 				delta: delta.content,
 			};
 		}
@@ -92,12 +102,22 @@ export class XAIProvider implements Provider {
 				this.priorContentBlockType != undefined
 			) {
 				this.currentContentBlockIndex++;
+				yield {
+					type: 'ADD_CONTENT_BLOCK',
+					index: this.currentContentBlockIndex,
+					block: {type: 'reasoning', text: ''},
+				};
+			} else if (this.priorContentBlockType === undefined) {
+				yield {
+					type: 'ADD_CONTENT_BLOCK',
+					index: this.currentContentBlockIndex,
+					block: {type: 'reasoning', text: ''},
+				};
 			}
 			this.priorContentBlockType = 'reasoning';
 			yield {
-				type: 'content_delta',
+				type: 'UPDATE_CONTENT_BLOCK',
 				index: this.currentContentBlockIndex,
-				input_type: 'reasoning',
 				delta: delta.reasoning_content as string,
 			};
 		}
@@ -113,21 +133,26 @@ export class XAIProvider implements Provider {
 
 			for (const toolCall of delta.tool_calls) {
 				yield {
-					type: 'tool_call_start',
+					type: 'ADD_CONTENT_BLOCK',
 					index: this.currentContentBlockIndex,
-					id: toolCall.id as string,
-					name: toolCall.function?.name as string,
+					block: {
+						type: 'tool_call',
+						tool_id: toolCall.id as string,
+						name: toolCall.function?.name as string,
+						args: '',
+					},
 				};
 
 				yield {
-					type: 'tool_call_delta',
+					type: 'UPDATE_CONTENT_BLOCK',
 					index: this.currentContentBlockIndex,
-					argsDelta: toolCall.function?.arguments as string,
+					delta: toolCall.function?.arguments as string,
 				};
 
 				yield {
-					type: 'content_block_end',
+					type: 'UPDATE_CONTENT_BLOCK',
 					index: this.currentContentBlockIndex,
+					final: true,
 				};
 			}
 		}

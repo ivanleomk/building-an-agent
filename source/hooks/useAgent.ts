@@ -16,7 +16,7 @@ export function useAgent(provider: Provider) {
 	const handleEvent = useCallback(
 		(event: ProviderEvent, currentConvo: ConversationItem[]) => {
 			switch (event.type) {
-				case 'start_message':
+				case 'START_MESSAGE':
 					return [
 						...currentConvo,
 						{
@@ -26,27 +26,47 @@ export function useAgent(provider: Provider) {
 						} satisfies Message,
 					];
 
-				case 'content_delta': {
+				case 'ADD_CONTENT_BLOCK': {
 					const lastItem = currentConvo[currentConvo.length - 1];
 					if (lastItem?.type !== 'message') return currentConvo;
 
 					const updated = [...currentConvo];
 					const message = updated[updated.length - 1] as Message;
+					message.content[event.index] = event.block;
 
-					if (message.content.length !== event.index + 1) {
-						message.content.push({type: event.input_type, text: ''});
-					}
+					return updated;
+				}
 
+				case 'UPDATE_CONTENT_BLOCK': {
+					const lastItem = currentConvo[currentConvo.length - 1];
+					if (lastItem?.type !== 'message') return currentConvo;
+
+					const updated = [...currentConvo];
+					const message = updated[updated.length - 1] as Message;
 					const block = message.content[event.index];
 
-					if (block?.type === 'text' || block?.type === 'reasoning') {
-						block.text += event.delta;
+					if (!block) return updated;
+
+					if (event.delta) {
+						if (block.type === 'text' || block.type === 'reasoning') {
+							block.text += event.delta;
+						} else if (block.type === 'tool_call' && typeof block.args === 'string') {
+							block.args += event.delta;
+						}
+					}
+
+					if (event.final && block.type === 'tool_call' && typeof block.args === 'string') {
+						try {
+							block.args = JSON.parse(block.args);
+						} catch {
+							// Leave as string if parsing fails
+						}
 					}
 
 					return updated;
 				}
 
-				case 'update_metadata': {
+				case 'UPDATE_CONTENT_BLOCK_METADATA': {
 					const lastItem = currentConvo[currentConvo.length - 1];
 					if (lastItem?.type !== 'message') return currentConvo;
 
@@ -55,60 +75,15 @@ export function useAgent(provider: Provider) {
 					const block = message.content[event.index];
 
 					if (block?.type === 'reasoning' && event.key === 'signature') {
-						block[event.key as 'signature'] = event.value;
+						block.signature = event.value;
 					}
 
 					return updated;
 				}
 
-				case 'tool_call_start': {
-					const lastItem = currentConvo[currentConvo.length - 1];
-					if (lastItem?.type !== 'message') return currentConvo;
-
-					const updated = [...currentConvo];
-					const message = updated[updated.length - 1] as Message;
-
-					if (message.content.length !== event.index + 1) {
-						message.content.push({
-							type: 'tool_call',
-							tool_id: event.id,
-							name: event.name,
-							args: '',
-						});
-					}
-
-					return updated;
-				}
-
-				case 'tool_call_delta': {
-					const lastItem = currentConvo[currentConvo.length - 1];
-					if (lastItem?.type !== 'message') return currentConvo;
-
-					const updated = [...currentConvo];
-					const message = updated[updated.length - 1] as Message;
-					const block = message.content[event.index];
-
-					if (block?.type === 'tool_call' && typeof block.args === 'string') {
-						block.args += event.argsDelta;
-					}
-
-					return updated;
-				}
-
-				case 'content_block_end': {
-					const lastItem = currentConvo[currentConvo.length - 1];
-					if (lastItem?.type !== 'message') return currentConvo;
-
-					const updated = [...currentConvo];
-					const message = updated[updated.length - 1] as Message;
-					const block = message.content[event.index];
-
-					if (block?.type === 'tool_call' && typeof block.args === 'string') {
-						block.args = JSON.parse(block.args);
-					}
-
-					return updated;
-				}
+				case 'END_MESSAGE':
+				case 'ERROR':
+					return currentConvo;
 
 				default:
 					return currentConvo;
@@ -136,15 +111,19 @@ export function useAgent(provider: Provider) {
 			for (const toolCall of toolCalls) {
 				const tool = TOOLS.find(t => t.name === toolCall.name);
 
-				if (!tool && typeof toolCall.args !== 'string') {
+				if (!tool) {
 					updated.push({
 						type: 'tool',
 						tool_id: toolCall.tool_id,
 						name: toolCall.name,
-						args: toolCall.args,
+						args: (typeof toolCall.args === 'string' ? {} : toolCall.args) as any,
 						output: [{type: 'text', text: `Tool ${toolCall.name} not found`}],
 						status: 'error',
 					} satisfies Tool);
+					continue;
+				}
+
+				if (typeof toolCall.args === 'string') {
 					continue;
 				}
 
