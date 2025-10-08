@@ -97,7 +97,7 @@ export class XAIProvider implements Provider {
 			yield {
 				type: 'content_delta',
 				index: this.currentContentBlockIndex,
-				input_type: 'text',
+				input_type: 'reasoning',
 				delta: delta.reasoning_content as string,
 			};
 		}
@@ -205,6 +205,7 @@ export class XAIProvider implements Provider {
 		| OpenAI.ChatCompletionContentPart
 		| OpenAI.ChatCompletionMessageToolCall => {
 		switch (block.type) {
+			case 'reasoning':
 			case 'text':
 				return {
 					type: 'text',

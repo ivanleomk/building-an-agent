@@ -3,16 +3,22 @@ import {Text, Box, useInput, useApp} from 'ink';
 import TextInput from 'ink-text-input';
 import {useAgent} from './hooks/useAgent.js';
 import Message from './components/Message.js';
-import {XAIProvider} from './provider/xai.js';
+// import {XAIProvider} from './provider/xai.js';
+import {AnthropicProvider} from './provider/anthropic.js';
 
 export default function App() {
 	const provider = useMemo(
 		() =>
-			new XAIProvider({
-				baseURL: 'https://api.x.ai/v1',
-				apiKey: process.env['XAI_API_KEY'],
-				defaultModel: 'grok-code-fast-1',
-				maxTokens: 4096,
+			// new XAIProvider({
+			// 	baseURL: 'https://api.x.ai/v1',
+			// 	apiKey: process.env['XAI_API_KEY'],
+			// 	defaultModel: 'grok-code-fast-1',
+			// 	maxTokens: 4096,
+			// }),
+			new AnthropicProvider({
+				defaultModel: 'claude-3-7-sonnet-latest',
+				maxTokens: 8092,
+				reasoningBudget: 4096,
 			}),
 		[],
 	);

@@ -18,6 +18,7 @@ export interface Provider {
 
 export type ContentBlock =
 	| {type: 'text'; text: string}
+	| {type: 'reasoning'; text: string; signature?: string}
 	| {
 			type: 'image';
 			source:
@@ -31,8 +32,8 @@ export type ContentBlock =
 	| {
 			type: 'tool_call';
 			tool_id: string;
-			name: string;
-			args: Record<string, any> | string;
+			name: Tool['name'];
+			args: Tool['args'] | string;
 	  };
 
 export type Message = {
@@ -45,7 +46,13 @@ export type ConversationItem = Message | Tool;
 
 export type ProviderEvent =
 	| {type: 'start_message'; role: 'assistant' | 'user'}
-	| {type: 'content_delta'; delta: string; index: number; input_type: 'text'}
+	| {
+			type: 'content_delta';
+			delta: string;
+			index: number;
+			input_type: 'text' | 'reasoning';
+	  }
+	| {type: 'update_metadata'; index: number; key: string; value: string}
 	| {type: 'tool_call_start'; index: number; id: string; name: string}
 	| {type: 'tool_call_delta'; index: number; argsDelta: string}
 	| {type: 'content_block_end'; index: number}

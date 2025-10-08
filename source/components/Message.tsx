@@ -8,7 +8,12 @@ interface MessageProps {
 
 export default function Message({message}: MessageProps) {
 	if (message.type === 'tool') {
-		const statusColor = message.status === 'success' ? 'green' : message.status === 'error' ? 'red' : 'yellow';
+		const statusColor =
+			message.status === 'success'
+				? 'green'
+				: message.status === 'error'
+				? 'red'
+				: 'yellow';
 		const textBlocks = message.output.filter(block => block.type === 'text');
 
 		return (
@@ -30,7 +35,9 @@ export default function Message({message}: MessageProps) {
 	const textColor = message.role === 'user' ? 'green' : 'yellow';
 	const prefix = message.role === 'user' ? '>' : '●';
 
-	const textBlocks = message.content.filter(block => block.type === 'text');
+	const textBlocks = message.content.filter(
+		block => block.type === 'text' || block.type === 'reasoning',
+	);
 	const toolCall = message.content.find(block => block.type === 'tool_call');
 
 	if (toolCall) {
@@ -54,7 +61,7 @@ export default function Message({message}: MessageProps) {
 			<Box marginLeft={2} flexDirection="column">
 				{textBlocks.map((block, i) => (
 					<Text key={i} color={textColor}>
-						{prefix} {block.type === 'text' ? block.text : ''}
+						{prefix} {block.text}
 					</Text>
 				))}
 			</Box>

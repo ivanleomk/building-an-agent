@@ -7,6 +7,7 @@ import type {
 	Message,
 	Tool,
 } from '../lib/types.js';
+import * as fs from 'fs';
 import {TOOLS} from '../lib/types.js';
 
 export function useAgent(provider: Provider) {
@@ -33,12 +34,28 @@ export function useAgent(provider: Provider) {
 					const message = updated[updated.length - 1] as Message;
 
 					if (message.content.length !== event.index + 1) {
-						message.content.push({type: 'text', text: ''});
+						message.content.push({type: event.input_type, text: ''});
 					}
 
 					const block = message.content[event.index];
-					if (block?.type === 'text') {
+
+					if (block?.type === 'text' || block?.type === 'reasoning') {
 						block.text += event.delta;
+					}
+
+					return updated;
+				}
+
+				case 'update_metadata': {
+					const lastItem = currentConvo[currentConvo.length - 1];
+					if (lastItem?.type !== 'message') return currentConvo;
+
+					const updated = [...currentConvo];
+					const message = updated[updated.length - 1] as Message;
+					const block = message.content[event.index];
+
+					if (block?.type === 'reasoning' && event.key === 'signature') {
+						block[event.key as 'signature'] = event.value;
 					}
 
 					return updated;
@@ -119,12 +136,12 @@ export function useAgent(provider: Provider) {
 			for (const toolCall of toolCalls) {
 				const tool = TOOLS.find(t => t.name === toolCall.name);
 
-				if (!tool) {
+				if (!tool && typeof toolCall.args !== 'string') {
 					updated.push({
 						type: 'tool',
 						tool_id: toolCall.tool_id,
-						name: toolCall.name as any,
-						args: toolCall.args as any,
+						name: toolCall.name,
+						args: toolCall.args,
 						output: [{type: 'text', text: `Tool ${toolCall.name} not found`}],
 						status: 'error',
 					} satisfies Tool);
@@ -161,8 +178,14 @@ export function useAgent(provider: Provider) {
 		[],
 	);
 
+	const writeFile = useCallback(async (path: string, data: string) => {
+		await fs.promises.writeFile(path, data);
+	}, []);
+
 	const processNextTurn = useCallback(
-		async (currentConvo: ConversationItem[]): Promise<{updated: ConversationItem[], shouldContinue: boolean}> => {
+		async (
+			currentConvo: ConversationItem[],
+		): Promise<{updated: ConversationItem[]; shouldContinue: boolean}> => {
 			let updated = currentConvo;
 
 			for await (const event of provider.complete(
@@ -172,10 +195,12 @@ export function useAgent(provider: Provider) {
 			)) {
 				updated = handleEvent(event, updated);
 				setConversation(updated);
+				await writeFile('./data.json', JSON.stringify(updated, null, 2));
 			}
 
 			const withToolResults = await executeTools(updated);
 			setConversation(withToolResults);
+			await writeFile('./data.json', JSON.stringify(withToolResults, null, 2));
 
 			const shouldContinue = withToolResults.length > updated.length;
 			return {updated: withToolResults, shouldContinue};
