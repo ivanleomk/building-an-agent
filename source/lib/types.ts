@@ -1,37 +1,67 @@
-import type { READ_FILE_TOOL_NAME, ReadFileArgs } from './tools/file.js';
+import {z} from 'zod';
+import {FILE_TOOLS} from './tools/file.js';
 
-export type ItemID = string;
-
-export type ToolName = typeof READ_FILE_TOOL_NAME;
-
-export type ToolArgs = ReadFileArgs;
-
-export type ToolCall = {
-	type: 'tool_call';
-	tool_id: string;
-	name: ToolName;
-	args: ToolArgs;
+export type ToolSchema = {
+	name: string;
+	description: string;
+	input_schema: z.ZodType<any>;
+	execute: (args: any) => Promise<any>;
 };
 
+export interface Provider {
+	complete(
+		conversation: ConversationItem[],
+		model?: string,
+		tools?: ToolSchema[],
+	): AsyncGenerator<ProviderEvent>;
+}
+
 export type ContentBlock =
-	| { type: 'text'; text: string }
-	| { type: 'image'; mimeType: string; data: string }
-	| ToolCall;
+	| {type: 'text'; text: string}
+	| {
+			type: 'image';
+			source:
+				| {
+						type: 'base64';
+						data: string;
+						mimeType: 'image/jpeg' | 'image/png' | 'image/gif' | 'image/webp';
+				  }
+				| {type: 'url'; url: string};
+	  }
+	| {
+			type: 'tool_call';
+			tool_id: string;
+			name: string;
+			args: Record<string, any> | string;
+	  };
 
 export type Message = {
-	id: ItemID;
+	type: 'message';
 	role: 'assistant' | 'user';
 	content: ContentBlock[];
 };
 
-export type Tool = {
-	id: ItemID;
-	name: ToolName;
+export type ConversationItem = Message | Tool;
+
+export type ProviderEvent =
+	| {type: 'start_message'; role: 'assistant' | 'user'}
+	| {type: 'content_delta'; delta: string; index: number; input_type: 'text'}
+	| {type: 'tool_call_start'; index: number; id: string; name: string}
+	| {type: 'tool_call_delta'; index: number; argsDelta: string}
+	| {type: 'content_block_end'; index: number}
+	| {type: 'end_message'}
+	| {type: 'add_tool_result'; tool: Tool}
+	| {type: 'error'; message: string};
+
+export const TOOLS = [...FILE_TOOLS];
+
+type ToolResult<T extends ToolSchema> = {
+	type: 'tool';
 	tool_id: string;
-	args: ToolArgs;
-	status: 'running' | 'completed' | 'error';
-	content?: ContentBlock[];
-	error?: string;
+	name: T['name'];
+	args: z.infer<T['input_schema']>;
+	output: ContentBlock[];
+	status: 'pending' | 'success' | 'error';
 };
 
-export type ConversationItem = Message | Tool;
+export type Tool = ToolResult<(typeof TOOLS)[number]>;

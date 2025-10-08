@@ -1,45 +1,25 @@
 import {z} from 'zod';
-import {promises as fs} from 'fs';
+import fs from 'fs';
 import type {ContentBlock} from '../types.js';
 
-export const READ_FILE_TOOL_NAME = 'read_file' as const;
-
-export const ReadFileArgsSchema = z.object({
-	files: z
-		.array(
-			z.object({
-				file_path: z
-					.string()
-					.describe('Relative or absolute path to the file'),
-			}),
-		)
-		.min(1)
-		.describe('Array of files to read'),
+export const readFileArgsSchema = z.object({
+	paths: z.array(z.string()),
 });
 
-export type ReadFileArgs = z.infer<typeof ReadFileArgsSchema>;
-
 export async function executeReadFile(
-	args: ReadFileArgs,
+	args: z.infer<typeof readFileArgsSchema>,
 ): Promise<ContentBlock[]> {
-	const results: ContentBlock[] = [];
-
-	for (const file of args.files) {
-		try {
-			const content = await fs.readFile(file.file_path, 'utf8');
-			results.push({
-				type: 'text',
-				text: `File: ${file.file_path}\n\n${content}`,
-			});
-		} catch (error) {
-			results.push({
-				type: 'text',
-				text: `Error reading ${file.file_path}: ${
-					error instanceof Error ? error.message : String(error)
-				}`,
-			});
-		}
-	}
-
-	return results;
+	return args.paths.map(path => ({
+		type: 'text',
+		text: fs.readFileSync(path, 'utf8'),
+	}));
 }
+
+export const FILE_TOOLS = [
+	{
+		name: 'read_file',
+		description: 'Read files in parallel and return the contents',
+		input_schema: readFileArgsSchema,
+		execute: executeReadFile,
+	},
+];
