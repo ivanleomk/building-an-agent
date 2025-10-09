@@ -33,7 +33,7 @@ export type ContentBlock =
 			type: 'tool_call';
 			tool_id: string;
 			name: Tool['name'];
-			args: Tool['args'] | string;
+			args: Tool['args'] | string; // String is while we're streaming, converted to a record thereafter
 	  };
 
 export type Message = {
@@ -47,8 +47,18 @@ export type ConversationItem = Message | Tool;
 export type ProviderEvent =
 	| {type: 'START_MESSAGE'; role: 'assistant' | 'user'}
 	| {type: 'ADD_CONTENT_BLOCK'; index: number; block: ContentBlock}
-	| {type: 'UPDATE_CONTENT_BLOCK'; index: number; delta?: string; final?: boolean}
-	| {type: 'UPDATE_CONTENT_BLOCK_METADATA'; index: number; key: string; value: any}
+	| {
+			type: 'UPDATE_CONTENT_BLOCK';
+			index: number;
+			delta?: string;
+			final?: boolean;
+	  }
+	| {
+			type: 'UPDATE_CONTENT_BLOCK_METADATA';
+			index: number;
+			key: string;
+			value: any;
+	  }
 	| {type: 'END_MESSAGE'}
 	| {type: 'ERROR'; message: string};
 

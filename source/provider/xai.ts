@@ -27,7 +27,7 @@ export class XAIProvider implements Provider {
 			apiKey: config.apiKey || process.env['XAI_API_KEY'],
 			baseURL: config.baseURL,
 		});
-		this.defaultModel = config.defaultModel || 'gpt-4o';
+		this.defaultModel = config.defaultModel || 'grok-code-fast-1';
 		this.maxTokens = config.maxTokens || 4096;
 	}
 
@@ -237,15 +237,13 @@ export class XAIProvider implements Provider {
 					text: block.text,
 				};
 			case 'image':
-				{
-					if (block.source.type === 'base64') {
-						return {
-							type: 'image_url',
-							image_url: {
-								url: block.source.data,
-							},
-						};
-					}
+				if (block.source.type === 'base64') {
+					return {
+						type: 'image_url',
+						image_url: {
+							url: `data:${block.source.mimeType};base64,${block.source.data}`,
+						},
+					};
 				}
 
 				return {
