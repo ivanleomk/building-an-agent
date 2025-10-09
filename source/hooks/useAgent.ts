@@ -1,0 +1,74 @@
+import {useState, useCallback, useEffect} from 'react';
+import type {
+	Provider,
+	ConversationItem,
+	Message,
+} from '../lib/types.js';
+import * as fs from 'fs';
+import {TOOLS} from '../lib/types.js';
+import {applyProviderEvent, executeTools} from './agentCore.js';
+
+export function useAgent(provider: Provider) {
+	const [conversation, setConversation] = useState<ConversationItem[]>([]);
+
+	useEffect(() => {
+		try {
+			const data = fs.readFileSync('./data.json', 'utf8');
+			const loadedConversation = JSON.parse(data);
+			setConversation(loadedConversation);
+		} catch (error) {
+			// File doesn't exist or invalid JSON, start with empty conversation
+			setConversation([]);
+		}
+	}, []);
+
+	const processNextTurn = useCallback(
+		async (
+			currentConvo: ConversationItem[],
+		): Promise<{updated: ConversationItem[]; shouldContinue: boolean}> => {
+			let updated = currentConvo;
+
+			for await (const event of provider.complete(
+				currentConvo,
+				undefined,
+				TOOLS,
+			)) {
+				updated = applyProviderEvent(event, updated);
+				setConversation(updated);
+			}
+
+			const {updated: withToolResults, executedAny} = await executeTools(updated);
+			setConversation(withToolResults);
+
+			return {updated: withToolResults, shouldContinue: executedAny};
+		},
+		[provider],
+	);
+
+	const complete = useCallback(
+		async (userInput: string) => {
+			const userMessage: Message = {
+				type: 'message',
+				role: 'user',
+				content: [{type: 'text', text: userInput}],
+			};
+
+			let currentConvo = [...conversation, userMessage];
+			setConversation(currentConvo);
+
+			while (true) {
+				const {updated, shouldContinue} = await processNextTurn(currentConvo);
+				currentConvo = updated;
+				if (!shouldContinue) break;
+			}
+
+			await fs.promises.writeFile('./data.json', JSON.stringify(currentConvo, null, 2));
+		},
+		[conversation, processNextTurn],
+	);
+
+	return {
+		conversation,
+		complete,
+	};
+}
