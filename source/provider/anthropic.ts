@@ -88,7 +88,7 @@ export class AnthropicProvider implements Provider {
 						block: {
 							type: 'tool_call',
 							tool_id: chunk.content_block.id,
-							name: chunk.content_block.name,
+							name: chunk.content_block.name as Tool['name'],
 							args: '',
 						},
 					};

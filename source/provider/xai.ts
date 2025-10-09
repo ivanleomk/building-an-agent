@@ -138,7 +138,7 @@ export class XAIProvider implements Provider {
 					block: {
 						type: 'tool_call',
 						tool_id: toolCall.id as string,
-						name: toolCall.function?.name as string,
+						name: toolCall.function?.name as Tool['name'],
 						args: '',
 					},
 				};

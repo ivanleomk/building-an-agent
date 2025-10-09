@@ -84,19 +84,21 @@ async function executeListFile(
 }
 
 export const createFileArgSchema = z.object({
-	path: z.string(),
+	filePath: z.string(),
 	content: z.string(),
 });
 
 async function executeCreateFile(args: z.infer<typeof createFileArgSchema>) {
-	const {path, content} = args;
-	fs.writeFileSync(path, content);
+	const {filePath, content} = args;
+	fs.writeFileSync(filePath, content);
 
-	return [{type: 'text' as const, text: `File ${args.path} created successfully`}];
+	return [
+		{type: 'text' as const, text: `File ${filePath} created successfully`},
+	];
 }
 
 export const replaceContentArgsSchema = z.object({
-	path: z.string(),
+	filePath: z.string(),
 	oldStr: z.string(),
 	newStr: z.string(),
 	replaceAll: z.boolean(),
@@ -105,8 +107,8 @@ export const replaceContentArgsSchema = z.object({
 async function executeReplaceContent(
 	args: z.infer<typeof replaceContentArgsSchema>,
 ) {
-	const {path, oldStr, newStr, replaceAll} = args;
-	const fileContent = fs.readFileSync(path, 'utf8');
+	const {filePath, oldStr, newStr, replaceAll} = args;
+	const fileContent = fs.readFileSync(filePath, 'utf8');
 
 	if (!replaceAll) {
 		const escaped = oldStr.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
@@ -124,7 +126,7 @@ async function executeReplaceContent(
 
 	const newContent = fileContent.replaceAll(oldStr, newStr);
 
-	fs.writeFileSync(path, newContent);
+	fs.writeFileSync(filePath, newContent);
 
 	return [{type: 'text' as const, text: 'Replaced content successfully'}];
 }
@@ -156,4 +158,4 @@ export const FILE_TOOLS = [
 		input_schema: replaceContentArgsSchema,
 		execute: executeReplaceContent,
 	},
-];
+] as const;

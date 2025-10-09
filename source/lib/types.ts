@@ -1,8 +1,8 @@
 import {z} from 'zod';
 import {FILE_TOOLS} from './tools/file.js';
 
-export type ToolSchema = {
-	name: string;
+export type ToolSchema<N extends string = string> = {
+	name: N;
 	description: string;
 	input_schema: z.ZodType<any>;
 	execute: (args: any) => Promise<any>;
