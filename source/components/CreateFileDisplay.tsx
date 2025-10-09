@@ -7,7 +7,7 @@ interface CreateFileDisplayProps {
 }
 
 export default function CreateFileDisplay({toolCall}: CreateFileDisplayProps) {
-	const args = toolCall.args as {path: string; content: string};
+	const args = toolCall.args as {filePath: string; content: string};
 	const lines = args.content.split('\n');
 	const maxLines = 25;
 	const displayLines = lines.slice(0, maxLines);
@@ -23,7 +23,7 @@ export default function CreateFileDisplay({toolCall}: CreateFileDisplayProps) {
 				paddingRight={1}
 			>
 				<Text color="gray">create_file </Text>
-				<Text color="white">[{args.path}]</Text>
+				<Text color="white">[{args.filePath}]</Text>
 			</Box>
 			<Box
 				borderStyle="round"

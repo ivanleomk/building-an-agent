@@ -10,7 +10,7 @@ export default function ReplaceContentDisplay({
 	toolCall,
 }: ReplaceContentDisplayProps) {
 	const args = toolCall.args as {
-		path: string;
+		filePath: string;
 		oldStr: string;
 		newStr: string;
 		replaceAll: boolean;
@@ -33,7 +33,7 @@ export default function ReplaceContentDisplay({
 				paddingRight={1}
 			>
 				<Text color="gray">replace_content </Text>
-				<Text color="white">[{args.path}]</Text>
+				<Text color="white">[{args.filePath}]</Text>
 			</Box>
 			<Box
 				borderStyle="round"
