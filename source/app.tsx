@@ -76,20 +76,30 @@ export default function App() {
 				) : null}
 			</Box>
 			<Box
+				flexDirection="column"
 				width="100%"
 				borderStyle="round"
 				borderColor="gray"
 				paddingX={1}
-				paddingY={0}
+				paddingTop={0.5}
+				paddingBottom={1}
 			>
-				<Text color="green">&gt; </Text>
-				<TextInput
-					value={input}
-					onChange={setInput}
-					cursorOffset={cursorOffset}
-					onCursorOffsetChange={setCursorOffset}
-					placeholder="Type a command..."
-				/>
+				<Box flexDirection="column">
+					<Box paddingBottom={0.5}>
+						<Text color="green">Current Directory: </Text>
+						<Text color="cyan">{process.cwd()}</Text>
+					</Box>
+					<Box>
+						<Text color="green">&gt; </Text>
+						<TextInput
+							value={input}
+							onChange={setInput}
+							cursorOffset={cursorOffset}
+							onCursorOffsetChange={setCursorOffset}
+							placeholder="Type a command..."
+						/>
+					</Box>
+				</Box>
 			</Box>
 			{showShutdown && (
 				<Box>

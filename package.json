@@ -9,6 +9,7 @@
 	},
 	"scripts": {
 		"build": "tsc",
+		"release": "tsc --outDir stable",
 		"dev": "tsc --watch",
 		"test": "prettier --check . && xo && ava",
 		"start": "bun run ./source/cli.tsx"
@@ -19,6 +20,7 @@
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.56.0",
 		"@ast-grep/cli": "^0.39.6",
+		"exa-js": "^1.10.2",
 		"execa": "^9.6.0",
 		"globby": "^13.0.0",
 		"ink": "^4.1.0",

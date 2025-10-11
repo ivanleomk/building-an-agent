@@ -205,6 +205,15 @@ export class XAIProvider implements Provider {
 	private fromMessageBlock = (
 		message: Message,
 	): OpenAI.ChatCompletionMessageParam => {
+		if (message.role == 'system') {
+			return {
+				role: 'system',
+				content: message.content
+					.filter(item => item.type === 'text')
+					.map(item => item.text)
+					.join(''),
+			};
+		}
 		if (message.role == 'user') {
 			return {
 				role: 'user',

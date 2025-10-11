@@ -36,12 +36,13 @@ export class AnthropicProvider implements Provider {
 		model?: string,
 		tools?: ToolSchema[],
 	): AsyncGenerator<ProviderEvent> {
-		const messages = this.toAnthropicMessages(conversation);
+		const { messages, system } = this.toAnthropicMessages(conversation);
 
 		const stream = await this.client.messages.stream({
 			model: model || this.defaultModel,
 			max_tokens: this.maxTokens,
 			messages,
+			system,
 			...(tools && {tools: tools.map(this.toAnthropicTool)}),
 			...(this.reasoningBudget && {
 				thinking: {
@@ -149,18 +150,26 @@ export class AnthropicProvider implements Provider {
 
 	private toAnthropicMessages(
 		conversation: ConversationItem[],
-	): Anthropic.MessageParam[] {
+	): { messages: Anthropic.MessageParam[]; system: string } {
 		const messages: Anthropic.MessageParam[] = [];
+		let system = '';
 
 		for (const item of conversation) {
 			if (item.type === 'message') {
-				messages.push(this.fromMessageBlock(item));
+				if (item.role === 'system') {
+					system += item.content
+						.filter(block => block.type === 'text')
+						.map(block => block.text)
+						.join('\n');
+				} else {
+					messages.push(this.fromMessageBlock(item));
+				}
 			} else {
 				messages.push(this.fromToolBlock(item));
 			}
 		}
 
-		return messages;
+		return { messages, system };
 	}
 
 	private fromToolBlock = (block: Tool): Anthropic.MessageParam => {
@@ -189,6 +198,7 @@ export class AnthropicProvider implements Provider {
 			}
 		}
 
+		// Assuming only user and assistant roles reach here, as system is filtered out
 		return {
 			role: message.role === 'user' ? 'user' : 'assistant',
 			content,

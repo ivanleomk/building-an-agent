@@ -43,7 +43,19 @@ export function useAgent(provider: Provider) {
 					content: [{type: 'text', text: userInput}],
 				};
 
-				let currentConvo = [...conversation, userMessage];
+				let currentConvo = [...conversation];
+				if (conversation.length === 0) {
+					const systemMessage: Message = {
+						type: 'message',
+						role: 'system',
+						content: [{
+							type: 'text',
+							text: `Today's date is ${new Date().toDateString()}. You are Amie, a coding agent. Be respectful and always ask the user for confirmation before making any irreversible changes.`
+						}],
+					};
+					currentConvo.push(systemMessage);
+				}
+				currentConvo.push(userMessage);
 				setConversation(currentConvo);
 
 				while (true) {
