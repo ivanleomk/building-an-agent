@@ -7,6 +7,8 @@ import ReplaceContentDisplay from './ReplaceContentDisplay.js';
 import ListFileDisplay from './ListFileDisplay.js';
 import CreateFileDisplay from './CreateFileDisplay.js';
 import GrepDisplay from './GrepDisplay.js';
+import GlobDisplay from './GlobDisplay.js';
+import BashDisplay from './BashDisplay.js';
 
 interface MessageProps {
 	message: ConversationItem;
@@ -45,9 +47,15 @@ export default function Message({message}: MessageProps) {
 		}
 
 		if (toolCall.name === 'grep') {
-			return (
-				<GrepDisplay toolCall={toolCall as Tool & {name: 'grep'}} />
-			);
+			return <GrepDisplay toolCall={toolCall as Tool & {name: 'grep'}} />;
+		}
+
+		if (toolCall.name === 'glob') {
+			return <GlobDisplay toolCall={toolCall as Tool & {name: 'glob'}} />;
+		}
+
+		if (toolCall.name === 'bash') {
+			return <BashDisplay toolCall={toolCall as Tool & {name: 'bash'}} />;
 		}
 
 		const statusColor =
@@ -134,9 +142,7 @@ export default function Message({message}: MessageProps) {
 					}
 					return (
 						<Box key={index} marginBottom={1}>
-							<MarkdownText color={textColor}>
-								{item.text}
-							</MarkdownText>
+							<MarkdownText color={textColor}>{item.text}</MarkdownText>
 						</Box>
 					);
 				})}

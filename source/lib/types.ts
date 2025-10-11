@@ -1,5 +1,6 @@
 import {z} from 'zod';
 import {FILE_TOOLS} from './tools/file.js';
+import {BASH_TOOLS} from './tools/bash.js';
 
 export type ToolSchema<N extends string = string> = {
 	name: N;
@@ -62,7 +63,7 @@ export type ProviderEvent =
 	| {type: 'END_MESSAGE'}
 	| {type: 'ERROR'; message: string};
 
-export const TOOLS = [...FILE_TOOLS];
+export const TOOLS = [...FILE_TOOLS, ...BASH_TOOLS];
 
 type ToolResult<T extends ToolSchema> = {
 	type: 'tool';

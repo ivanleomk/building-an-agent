@@ -26,11 +26,12 @@ function CodeBlock({code, language}: {code: string; language?: string}) {
 			alignSelf="center"
 		>
 			<Box
-				padding={1}
-				borderStyle="round"
-				borderColor="gray"
-				flexDirection="column"
-			>
+			padding={1}
+			paddingLeft={2}
+			borderStyle="round"
+			borderColor="gray"
+			 flexDirection="column"
+		>
 				{language && (
 					<Text color="cyan" dimColor>
 						{language}
@@ -203,5 +204,5 @@ export default function MarkdownText({children, color = 'white'}: MarkdownTextPr
 		);
 	}
 
-	return <>{segments}</>;
+	return <Box flexDirection="column">{segments}</Box>;
 }
