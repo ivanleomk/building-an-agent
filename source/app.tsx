@@ -1,11 +1,13 @@
 import React, {useState, useMemo} from 'react';
 import {Text, Box, useInput, useApp} from 'ink';
-import {globby} from 'globby';
+
 import {useAgent} from './hooks/useAgent.js';
 import Message from './components/Message.js';
+import Autocomplete from './components/Autocomplete.js';
 // import {XAIProvider} from './provider/xai.js';
 // import {AnthropicProvider} from './provider/anthropic.js';
 import {XAIProvider} from './provider/xai.js';
+import TextInput from 'ink-text-input';
 
 export default function App() {
 	const provider = useMemo(
@@ -28,6 +30,9 @@ export default function App() {
 	const [input, setInput] = useState('');
 	const [showShutdown, setShowShutdown] = useState(false);
 	const {exit} = useApp();
+
+	const lastTerm = input.split(' ').at(-1) || '';
+	const showAutocomplete = lastTerm.includes('@');
 
 	const sendMessage = async () => {
 		if (input.trim().length === 0) {
@@ -54,6 +59,18 @@ export default function App() {
 					<Message key={index} message={message} />
 				))}
 				{conversation.length > 0 && <Box flexGrow={1} />}
+			</Box>
+			<Box>
+				{showAutocomplete ? (
+					<Autocomplete
+						searchTerm={lastTerm}
+						updateUserInput={newTerm => {
+							const prevParts = input.split(/\s+/);
+							prevParts[prevParts.length - 1] = newTerm;
+							setInput(prevParts.join(' ') + ' ');
+						}}
+					/>
+				) : null}
 			</Box>
 			<Box width="100%">
 				<Text color="blue">$ </Text>

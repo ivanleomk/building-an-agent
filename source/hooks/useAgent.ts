@@ -1,4 +1,4 @@
-import {useState, useCallback, useEffect} from 'react';
+import {useState, useCallback} from 'react';
 import type {Provider, ConversationItem, Message} from '../lib/types.js';
 import * as fs from 'fs';
 import {TOOLS} from '../lib/types.js';
@@ -7,17 +7,6 @@ import {applyProviderEvent, executeTools} from './agentCore.js';
 export function useAgent(provider: Provider) {
 	const [conversation, setConversation] = useState<ConversationItem[]>([]);
 	const [isLoading, setIsLoading] = useState(false);
-
-	useEffect(() => {
-		try {
-			const data = fs.readFileSync('./data.json', 'utf8');
-			const loadedConversation = JSON.parse(data);
-			setConversation(loadedConversation);
-		} catch (error) {
-			// File doesn't exist or invalid JSON, start with empty conversation
-			setConversation([]);
-		}
-	}, []);
 
 	const processNextTurn = useCallback(
 		async (
