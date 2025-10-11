@@ -4,10 +4,10 @@ import {Text, Box, useInput, useApp} from 'ink';
 import {useAgent} from './hooks/useAgent.js';
 import Message from './components/Message.js';
 import Autocomplete from './components/Autocomplete.js';
+import TextInput from './components/TextInput.js';
 // import {XAIProvider} from './provider/xai.js';
 // import {AnthropicProvider} from './provider/anthropic.js';
 import {XAIProvider} from './provider/xai.js';
-import TextInput from 'ink-text-input';
 
 export default function App() {
 	const provider = useMemo(
@@ -28,6 +28,7 @@ export default function App() {
 
 	const {conversation, complete} = useAgent(provider);
 	const [input, setInput] = useState('');
+	const [cursorOffset, setCursorOffset] = useState(0);
 	const [showShutdown, setShowShutdown] = useState(false);
 	const {exit} = useApp();
 
@@ -67,16 +68,26 @@ export default function App() {
 						updateUserInput={newTerm => {
 							const prevParts = input.split(/\s+/);
 							prevParts[prevParts.length - 1] = newTerm;
-							setInput(prevParts.join(' ') + ' ');
+							const newInput = prevParts.join(' ') + ' ';
+							setInput(newInput);
+							setCursorOffset(newInput.length);
 						}}
 					/>
 				) : null}
 			</Box>
-			<Box width="100%">
-				<Text color="blue">$ </Text>
+			<Box
+				width="100%"
+				borderStyle="round"
+				borderColor="gray"
+				paddingX={1}
+				paddingY={0}
+			>
+				<Text color="green">&gt; </Text>
 				<TextInput
 					value={input}
 					onChange={setInput}
+					cursorOffset={cursorOffset}
+					onCursorOffsetChange={setCursorOffset}
 					placeholder="Type a command..."
 				/>
 			</Box>
