@@ -6,6 +6,7 @@ import ReadFileDisplay from './ReadFileDisplay.js';
 import ReplaceContentDisplay from './ReplaceContentDisplay.js';
 import ListFileDisplay from './ListFileDisplay.js';
 import CreateFileDisplay from './CreateFileDisplay.js';
+import GrepDisplay from './GrepDisplay.js';
 
 interface MessageProps {
 	message: ConversationItem;
@@ -40,6 +41,12 @@ export default function Message({message}: MessageProps) {
 				<CreateFileDisplay
 					toolCall={toolCall as Tool & {name: 'create_file'}}
 				/>
+			);
+		}
+
+		if (toolCall.name === 'grep') {
+			return (
+				<GrepDisplay toolCall={toolCall as Tool & {name: 'grep'}} />
 			);
 		}
 

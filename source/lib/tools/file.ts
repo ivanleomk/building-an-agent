@@ -4,6 +4,7 @@ import fs from 'fs';
 import type {ContentBlock} from '../types.js';
 import {globby} from 'globby';
 import path from 'path';
+import {execSync} from 'child_process';
 
 export const readFileArgsSchema = z.object({
 	paths: z.array(z.string()),
@@ -131,6 +132,61 @@ async function executeReplaceContent(
 	return [{type: 'text' as const, text: 'Replaced content successfully'}];
 }
 
+export const grepArgsSchema = z.object({
+	pattern: z.string(),
+	path: z.string(),
+	caseSensitive: z.boolean().optional().default(false),
+	type: z.enum(['ast', 'normal']).optional().default('normal'),
+});
+
+async function executeGrep(
+	args: z.infer<typeof grepArgsSchema>,
+): Promise<ContentBlock[]> {
+	try {
+		let result: string;
+
+		if (args.type === 'ast') {
+			const cmd = `ast-grep --pattern "${args.pattern.replace(/"/g, '\\"')}" ${args.path}`;
+			result = execSync(cmd, {encoding: 'utf8', maxBuffer: 10 * 1024 * 1024});
+		} else {
+			const caseFlag = args.caseSensitive ? '' : '-i';
+			const cmd = `rg ${caseFlag} --line-number --column --color never "${args.pattern.replace(/"/g, '\\"')}" ${args.path}`;
+			result = execSync(cmd, {encoding: 'utf8', maxBuffer: 10 * 1024 * 1024});
+		}
+
+		return [{type: 'text' as const, text: result.trim()}];
+	} catch (error: any) {
+		if (error.status === 1) {
+			return [{type: 'text' as const, text: 'No matches found'}];
+		}
+		throw error;
+	}
+}
+
+export const globArgsSchema = z.object({
+	pattern: z.string(),
+	directory: z.string(),
+	limit: z.number().optional().default(100),
+	offset: z.number().optional().default(0),
+});
+
+async function executeGlob(
+	args: z.infer<typeof globArgsSchema>,
+): Promise<ContentBlock[]> {
+	const files = await globby(args.pattern, {
+		cwd: args.directory,
+		gitignore: true,
+		dot: false,
+	});
+
+	const start = args.offset || 0;
+	const end = args.limit ? start + args.limit : undefined;
+	const paginatedFiles = files.slice(start, end);
+
+	const result = paginatedFiles.join('\n');
+	return [{type: 'text' as const, text: result}];
+}
+
 export const FILE_TOOLS = [
 	{
 		name: 'read_file',
@@ -157,5 +213,18 @@ export const FILE_TOOLS = [
 			'Replace content in a file. If replace_all is false, validates there is only one occurrence.',
 		input_schema: replaceContentArgsSchema,
 		execute: executeReplaceContent,
+	},
+	{
+		name: 'grep',
+		description:
+			'Search for patterns in files using grep or ast-grep for structural code search',
+		input_schema: grepArgsSchema,
+		execute: executeGrep,
+	},
+	{
+		name: 'glob',
+		description: 'Find files matching a glob pattern in a directory',
+		input_schema: globArgsSchema,
+		execute: executeGlob,
 	},
 ] as const;

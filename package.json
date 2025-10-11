@@ -18,6 +18,8 @@
 	],
 	"dependencies": {
 		"@anthropic-ai/sdk": "^0.56.0",
+		"@ast-grep/cli": "^0.39.6",
+		"globby": "^13.0.0",
 		"ink": "^4.1.0",
 		"ink-text-input": "^6.0.0",
 		"meow": "^11.0.0",

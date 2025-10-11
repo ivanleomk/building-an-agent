@@ -1,6 +1,36 @@
 import React from 'react';
 import {Box, Text} from 'ink';
+import {highlight} from 'cli-highlight';
 import type {Tool} from '../lib/types.js';
+
+const languageMap: Record<string, string> = {
+	'.ts': 'typescript',
+	'.tsx': 'typescript',
+	'.js': 'javascript',
+	'.jsx': 'javascript',
+	'.py': 'python',
+	'.rb': 'ruby',
+	'.java': 'java',
+	'.cpp': 'cpp',
+	'.c': 'c',
+	'.php': 'php',
+	'.go': 'go',
+	'.rs': 'rust',
+	'.sh': 'bash',
+	'.json': 'json',
+	'.xml': 'xml',
+	'.html': 'html',
+	'.css': 'css',
+	'.sql': 'sql',
+	'.md': 'markdown',
+	'.yaml': 'yaml',
+	'.yml': 'yaml',
+};
+
+function getLanguageFromPath(filePath: string): string | undefined {
+	const ext = filePath.substring(filePath.lastIndexOf('.'));
+	return languageMap[ext];
+}
 
 interface CreateFileDisplayProps {
 	toolCall: Tool & {name: 'create_file'};
@@ -8,7 +38,15 @@ interface CreateFileDisplayProps {
 
 export default function CreateFileDisplay({toolCall}: CreateFileDisplayProps) {
 	const args = toolCall.args as {filePath: string; content: string};
-	const lines = args.content.split('\n');
+	const processedContent = args.content
+		.split('\n')
+		.map(line => line.replace(/\t/g, ' ').trimEnd())
+		.join('\n');
+	const language = getLanguageFromPath(args.filePath);
+	const highlightedContent = language
+		? highlight(processedContent, {language, ignoreIllegals: true})
+		: processedContent;
+	const lines = highlightedContent.split('\n');
 	const maxLines = 25;
 	const displayLines = lines.slice(0, maxLines);
 	const hasMore = lines.length > maxLines;
@@ -24,6 +62,7 @@ export default function CreateFileDisplay({toolCall}: CreateFileDisplayProps) {
 			>
 				<Text color="gray">create_file </Text>
 				<Text color="white">[{args.filePath}]</Text>
+				{language && <Text color="cyan"> ({language})</Text>}
 			</Box>
 			<Box
 				borderStyle="round"

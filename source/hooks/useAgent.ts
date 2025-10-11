@@ -1,15 +1,12 @@
 import {useState, useCallback, useEffect} from 'react';
-import type {
-	Provider,
-	ConversationItem,
-	Message,
-} from '../lib/types.js';
+import type {Provider, ConversationItem, Message} from '../lib/types.js';
 import * as fs from 'fs';
 import {TOOLS} from '../lib/types.js';
 import {applyProviderEvent, executeTools} from './agentCore.js';
 
 export function useAgent(provider: Provider) {
 	const [conversation, setConversation] = useState<ConversationItem[]>([]);
+	const [isLoading, setIsLoading] = useState(false);
 
 	useEffect(() => {
 		try {
@@ -33,11 +30,14 @@ export function useAgent(provider: Provider) {
 				undefined,
 				TOOLS,
 			)) {
+				setIsLoading(false);
 				updated = applyProviderEvent(event, updated);
 				setConversation(updated);
 			}
 
-			const {updated: withToolResults, executedAny} = await executeTools(updated);
+			const {updated: withToolResults, executedAny} = await executeTools(
+				updated,
+			);
 			setConversation(withToolResults);
 
 			return {updated: withToolResults, shouldContinue: executedAny};
@@ -47,22 +47,30 @@ export function useAgent(provider: Provider) {
 
 	const complete = useCallback(
 		async (userInput: string) => {
-			const userMessage: Message = {
-				type: 'message',
-				role: 'user',
-				content: [{type: 'text', text: userInput}],
-			};
+			try {
+				const userMessage: Message = {
+					type: 'message',
+					role: 'user',
+					content: [{type: 'text', text: userInput}],
+				};
 
-			let currentConvo = [...conversation, userMessage];
-			setConversation(currentConvo);
+				let currentConvo = [...conversation, userMessage];
+				setConversation(currentConvo);
 
-			while (true) {
-				const {updated, shouldContinue} = await processNextTurn(currentConvo);
-				currentConvo = updated;
-				if (!shouldContinue) break;
+				while (true) {
+					setIsLoading(true);
+					const {updated, shouldContinue} = await processNextTurn(currentConvo);
+					currentConvo = updated;
+					if (!shouldContinue) break;
+				}
+
+				await fs.promises.writeFile(
+					'./data.json',
+					JSON.stringify(currentConvo, null, 2),
+				);
+			} finally {
+				setIsLoading(false);
 			}
-
-			await fs.promises.writeFile('./data.json', JSON.stringify(currentConvo, null, 2));
 		},
 		[conversation, processNextTurn],
 	);
@@ -70,5 +78,6 @@ export function useAgent(provider: Provider) {
 	return {
 		conversation,
 		complete,
+		isLoading,
 	};
 }

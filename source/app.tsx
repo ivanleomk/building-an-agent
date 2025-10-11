@@ -1,6 +1,6 @@
 import React, {useState, useMemo} from 'react';
 import {Text, Box, useInput, useApp} from 'ink';
-import TextInput from 'ink-text-input';
+import {globby} from 'globby';
 import {useAgent} from './hooks/useAgent.js';
 import Message from './components/Message.js';
 // import {XAIProvider} from './provider/xai.js';

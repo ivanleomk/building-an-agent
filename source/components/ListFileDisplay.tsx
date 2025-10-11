@@ -14,7 +14,9 @@ export default function ListFileDisplay({toolCall}: ListFileDisplayProps) {
 		return null;
 	}
 
-	const lines = textOutput.text.split('\n');
+	const lines = textOutput.text
+		.split('\n')
+		.map(line => line.replace(/\t/g, ' ').trimEnd());
 	const maxLines = 25;
 	const displayLines = lines.slice(0, maxLines);
 	const hasMore = lines.length > maxLines;
