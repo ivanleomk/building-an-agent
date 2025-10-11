@@ -36,26 +36,33 @@ export class XAIProvider implements Provider {
 		model?: string,
 		tools?: ToolSchema[],
 	): AsyncGenerator<ProviderEvent> {
-		const messages = conversation.map(this.fromConversationItem);
+		try {
+			const messages = conversation.map(this.fromConversationItem);
 
-		this.currentContentBlockIndex = 0;
-		this.priorContentBlockType = undefined;
+			this.currentContentBlockIndex = 0;
+			this.priorContentBlockType = undefined;
 
-		const stream = await this.client.chat.completions.create({
-			model: model || this.defaultModel,
-			max_tokens: this.maxTokens,
-			messages,
-			stream: true,
-			...(tools && {tools: tools.map(this.toOpenAITool)}),
-		});
+			const stream = await this.client.chat.completions.create({
+				model: model || this.defaultModel,
+				max_tokens: this.maxTokens,
+				messages,
+				stream: true,
+				...(tools && {tools: tools.map(this.toOpenAITool)}),
+			});
 
-		yield {type: 'START_MESSAGE', role: 'assistant'};
+			yield {type: 'START_MESSAGE', role: 'assistant'};
 
-		for await (const chunk of stream) {
-			yield* this.handleStreamChunk(chunk);
+			for await (const chunk of stream) {
+				yield* this.handleStreamChunk(chunk);
+			}
+
+			yield {type: 'END_MESSAGE'};
+		} catch (error) {
+			yield {
+				type: 'ERROR',
+				message: error instanceof Error ? error.message : String(error),
+			};
 		}
-
-		yield {type: 'END_MESSAGE'};
 	}
 
 	private *handleStreamChunk(
@@ -198,6 +205,15 @@ export class XAIProvider implements Provider {
 	private fromMessageBlock = (
 		message: Message,
 	): OpenAI.ChatCompletionMessageParam => {
+		if (message.role == 'system') {
+			return {
+				role: 'system',
+				content: message.content
+					.filter(item => item.type === 'text')
+					.map(item => item.text)
+					.join(''),
+			};
+		}
 		if (message.role == 'user') {
 			return {
 				role: 'user',

@@ -1,8 +1,10 @@
 import React, {useState, useMemo} from 'react';
 import {Text, Box, useInput, useApp} from 'ink';
-import TextInput from 'ink-text-input';
+
 import {useAgent} from './hooks/useAgent.js';
 import Message from './components/Message.js';
+import Autocomplete from './components/Autocomplete.js';
+import TextInput from './components/TextInput.js';
 // import {XAIProvider} from './provider/xai.js';
 // import {AnthropicProvider} from './provider/anthropic.js';
 import {XAIProvider} from './provider/xai.js';
@@ -26,8 +28,12 @@ export default function App() {
 
 	const {conversation, complete} = useAgent(provider);
 	const [input, setInput] = useState('');
+	const [cursorOffset, setCursorOffset] = useState(0);
 	const [showShutdown, setShowShutdown] = useState(false);
 	const {exit} = useApp();
+
+	const lastTerm = input.split(' ').at(-1) || '';
+	const showAutocomplete = lastTerm.includes('@');
 
 	const sendMessage = async () => {
 		if (input.trim().length === 0) {
@@ -55,13 +61,45 @@ export default function App() {
 				))}
 				{conversation.length > 0 && <Box flexGrow={1} />}
 			</Box>
-			<Box width="100%">
-				<Text color="blue">$ </Text>
-				<TextInput
-					value={input}
-					onChange={setInput}
-					placeholder="Type a command..."
-				/>
+			<Box>
+				{showAutocomplete ? (
+					<Autocomplete
+						searchTerm={lastTerm}
+						updateUserInput={newTerm => {
+							const prevParts = input.split(/\s+/);
+							prevParts[prevParts.length - 1] = newTerm;
+							const newInput = prevParts.join(' ') + ' ';
+							setInput(newInput);
+							setCursorOffset(newInput.length);
+						}}
+					/>
+				) : null}
+			</Box>
+			<Box
+				flexDirection="column"
+				width="100%"
+				borderStyle="round"
+				borderColor="gray"
+				paddingX={1}
+				paddingTop={0.5}
+				paddingBottom={1}
+			>
+				<Box flexDirection="column">
+					<Box paddingBottom={0.5}>
+						<Text color="green">Current Directory: </Text>
+						<Text color="cyan">{process.cwd()}</Text>
+					</Box>
+					<Box>
+						<Text color="green">&gt; </Text>
+						<TextInput
+							value={input}
+							onChange={setInput}
+							cursorOffset={cursorOffset}
+							onCursorOffsetChange={setCursorOffset}
+							placeholder="Type a command..."
+						/>
+					</Box>
+				</Box>
 			</Box>
 			{showShutdown && (
 				<Box>

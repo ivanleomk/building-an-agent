@@ -15,7 +15,9 @@ export default function ReadFileDisplay({toolCall}: ReadFileDisplayProps) {
 			{textOutputs.map((output, index) => {
 				if (output.type !== 'text') return null;
 
-				const lines = output.text.split('\n');
+				const lines = output.text
+					.split('\n')
+					.map(line => line.replace(/\t/g, ' ').trimEnd());
 				const preview = lines.slice(0, 3).join('\n');
 				const totalLines = lines.length;
 				const filePath = paths[index] || 'unknown';

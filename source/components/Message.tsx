@@ -6,6 +6,11 @@ import ReadFileDisplay from './ReadFileDisplay.js';
 import ReplaceContentDisplay from './ReplaceContentDisplay.js';
 import ListFileDisplay from './ListFileDisplay.js';
 import CreateFileDisplay from './CreateFileDisplay.js';
+import GrepDisplay from './GrepDisplay.js';
+import GlobDisplay from './GlobDisplay.js';
+import BashDisplay from './BashDisplay.js';
+import SearchWebDisplay from './SearchWebDisplay.js';
+import QueryDisplay from './QueryDisplay.js';
 
 interface MessageProps {
 	message: ConversationItem;
@@ -41,6 +46,28 @@ export default function Message({message}: MessageProps) {
 					toolCall={toolCall as Tool & {name: 'create_file'}}
 				/>
 			);
+		}
+
+		if (toolCall.name === 'grep') {
+			return <GrepDisplay toolCall={toolCall as Tool & {name: 'grep'}} />;
+		}
+
+		if (toolCall.name === 'glob') {
+			return <GlobDisplay toolCall={toolCall as Tool & {name: 'glob'}} />;
+		}
+
+		if (toolCall.name === 'bash') {
+			return <BashDisplay toolCall={toolCall as Tool & {name: 'bash'}} />;
+		}
+
+		if (toolCall.name === 'search_web') {
+			return (
+				<SearchWebDisplay toolCall={toolCall as Tool & {name: 'search_web'}} />
+			);
+		}
+
+		if (toolCall.name === 'query') {
+			return <QueryDisplay toolCall={toolCall as Tool & {name: 'query'}} />;
 		}
 
 		const statusColor =
@@ -127,9 +154,7 @@ export default function Message({message}: MessageProps) {
 					}
 					return (
 						<Box key={index} marginBottom={1}>
-							<MarkdownText color={textColor}>
-								{item.text}
-							</MarkdownText>
+							<MarkdownText color={textColor}>{item.text}</MarkdownText>
 						</Box>
 					);
 				})}

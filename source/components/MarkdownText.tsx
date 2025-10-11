@@ -8,9 +8,14 @@ interface MarkdownTextProps {
 }
 
 function CodeBlock({code, language}: {code: string; language?: string}) {
+	const processedCode = code
+		.split('\n')
+		.map(line => line.replace(/\t/g, ' ').trimEnd())
+		.join('\n');
+
 	const highlightedCode = language
-		? highlight(code, {language, ignoreIllegals: true})
-		: code;
+		? highlight(processedCode, {language, ignoreIllegals: true})
+		: processedCode;
 
 	return (
 		<Box
@@ -21,17 +26,20 @@ function CodeBlock({code, language}: {code: string; language?: string}) {
 			alignSelf="center"
 		>
 			<Box
-				padding={1}
-				borderStyle="round"
-				borderColor="gray"
-				justifyContent="space-between"
-			>
-				<Text color="white">{highlightedCode}</Text>
+			padding={1}
+			paddingLeft={2}
+			borderStyle="round"
+			borderColor="gray"
+			 flexDirection="column"
+		>
 				{language && (
 					<Text color="cyan" dimColor>
 						{language}
 					</Text>
 				)}
+				<Text color="white" wrap="wrap">
+					{highlightedCode}
+				</Text>
 			</Box>
 		</Box>
 	);
@@ -196,5 +204,5 @@ export default function MarkdownText({children, color = 'white'}: MarkdownTextPr
 		);
 	}
 
-	return <>{segments}</>;
+	return <Box flexDirection="column">{segments}</Box>;
 }
